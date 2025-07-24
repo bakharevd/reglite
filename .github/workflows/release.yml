@@ -16,7 +16,7 @@ jobs:
 
       - name: List files
         run: ls -R
-        working-directory: ${{ github.workspace }}/reglite
+        working-directory: ${{ github.workspace }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -25,11 +25,11 @@ jobs:
 
       - name: Set up zip and tar
         run: sudo apt-get update && sudo apt-get install -y zip
-        working-directory: ${{ github.workspace }}/reglite
+        working-directory: ${{ github.workspace }}
 
       - name: Make release
         run: make release
-        working-directory: ${{ github.workspace }}/reglite
+        working-directory: ${{ github.workspace }}
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
