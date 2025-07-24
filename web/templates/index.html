@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fab fa-docker"></i> RegLite</h1>
+                <p>Легковесный веб-интерфейс для Docker Registry</p>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="sidebar">
+                <div class="section">
+                    <h3><i class="fas fa-server"></i> Реестры</h3>
+                    <div id="registries-list" class="list-group">
+                        <div class="loading">Загружаем...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="section" id="repositories-section" style="display: none;">
+                    <div class="section-header">
+                        <h3><i class="fas fa-folder"></i> Репозитории</h3>
+                        <span id="current-registry" class="badge"></span>
+                    </div>
+                    <div id="repositories-list" class="grid">
+                        <div class="loading">Загружаем репозитории...</div>
+                    </div>
+                </div>
+
+                <div class="section" id="tags-section" style="display: none;">
+                    <div class="section-header">
+                        <h3><i class="fas fa-tags"></i> Теги</h3>
+                        <span id="current-repository" class="badge"></span>
+                        <button id="back-to-repos" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Назад
+                        </button>
+                    </div>
+                    <div id="tags-list" class="grid">
+                        <div class="loading">Загружаем теги...</div>
+                    </div>
+                </div>
+
+                <div class="welcome" id="welcome-section">
+                    <div class="welcome-content">
+                        <i class="fab fa-docker welcome-icon"></i>
+                        <h2>Добро пожаловать в RegLite</h2>
+                        <p>Выберите реестр слева для начала работы</p>
+                        <div class="features">
+                            <div class="feature">
+                                <i class="fas fa-eye"></i>
+                                <span>Просмотр репозиториев</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-tags"></i>
+                                <span>Управление тегами</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-trash"></i>
+                                <span>Удаление образов</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Информация о манифестах</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal для информации о теге -->
+    <div id="tag-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4><i class="fas fa-info-circle"></i> Информация о теге</h4>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="tag-info"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="delete-tag" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+                <button id="close-modal" class="btn btn-secondary">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast уведомления -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
+

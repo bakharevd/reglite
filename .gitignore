@@ -1,0 +1,80 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+reglite
+reglite-*
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Local environment files
+.env
+.env.local
+.env.production
+
+# Config files with secrets
+registries.prod.yaml
+registries.local.yaml
+config.local.yaml
+
+# Log files
+*.log
+logs/
+
+# Build artifacts
+dist/
+build/
+
+# Docker
+.dockerignore
+
+# Temporary files
+tmp/
+temp/
+
+# Node modules (if using any JS tools)
+node_modules/
+
+# Coverage reports
+coverage.txt
+coverage.xml
+
+# Profiling files
+*.prof
+mem.prof
+cpu.prof
+
+# Local development database
+*.db
+*.sqlite
+*.sqlite3 
+inventory.yaml 

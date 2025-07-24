@@ -1,0 +1,10 @@
+inventory:
+  my-internal-registry:
+    url: http://192.168.0.50:5000
+  secure-registry:
+    url: https://registry.mycorp.internal
+    username: admin
+    password: secret
+  docker-hub:
+    url: https://registry-1.docker.io
+    # Для публичных репозиториев можно не указывать username/password 
