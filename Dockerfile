@@ -1,14 +1,19 @@
 FROM golang:1.24-alpine AS builder
 
+# Переменные для мультиплатформенной сборки
+ARG TARGETOS
+ARG TARGETARCH
+
 RUN apk --no-cache add git ca-certificates tzdata
 
 WORKDIR /app
 
+# Кэширование зависимостей
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} go build \
     -ldflags='-w -s -extldflags "-static"' \
     -a -installsuffix cgo \
     -o reglite cmd/reglite/main.go
