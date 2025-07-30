@@ -1,156 +1,180 @@
 .PHONY: help build run test clean docker docker-build docker-run dev fmt lint deps update-deps
 
+# Основные переменные
 BINARY_NAME=reglite
 DOCKER_IMAGE=reglite
 DOCKER_TAG=latest
 CONFIG_FILE=inventory.yaml
 PORT=8080
+DIST_DIR=dist
 
-help: ## Show this help message
+# Docker Hub настройки
+DOCKERHUB_USER=sbakharevd
+DOCKER_REPO=$(DOCKERHUB_USER)/$(DOCKER_IMAGE)
+
+# Git информация
+GIT_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+GIT_COMMIT := $(shell git rev-parse --short HEAD)
+
+# Платформы для сборки
+PLATFORMS=linux/amd64,linux/arm64
+
+help: ## Показать это сообщение помощи
 	@echo "RegLite - Docker Registry Web UI"
 	@echo ""
-	@echo "Available commands:"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo "Доступные команды:"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-build: ## Build the application
-	@echo "Building RegLite..."
-	go build -o $(BINARY_NAME) cmd/reglite/main.go
+# === РАЗРАБОТКА ===
 
-build-all: ## Build for all platforms
-	@echo "Building for all platforms..."
-	GOOS=linux GOARCH=amd64 go build -o dist/$(BINARY_NAME)-linux-amd64 cmd/reglite/main.go
-	GOOS=linux GOARCH=arm64 go build -o dist/$(BINARY_NAME)-linux-arm64 cmd/reglite/main.go
-	GOOS=darwin GOARCH=amd64 go build -o dist/$(BINARY_NAME)-darwin-amd64 cmd/reglite/main.go
-	GOOS=darwin GOARCH=arm64 go build -o dist/$(BINARY_NAME)-darwin-arm64 cmd/reglite/main.go
-	GOOS=windows GOARCH=amd64 go build -o dist/$(BINARY_NAME)-windows-amd64.exe cmd/reglite/main.go
-
-run: ## Run the application
-	@echo "Starting RegLite on port $(PORT)..."
-	go run cmd/reglite/main.go -config=$(CONFIG_FILE) -port=$(PORT)
-
-dev: ## Run in development mode with auto-reload
-	@echo "Starting RegLite in development mode..."
+dev: ## Запустить в режиме разработки с авто-перезагрузкой
+	@echo "Запуск RegLite в режиме разработки..."
 	go run cmd/reglite/main.go -config=$(CONFIG_FILE) -port=$(PORT) -debug
 
-test: ## Run tests
-	@echo "Running tests..."
+run: ## Запустить приложение
+	@echo "Запуск RegLite на порту $(PORT)..."
+	go run cmd/reglite/main.go -config=$(CONFIG_FILE) -port=$(PORT)
+
+# === СБОРКА ===
+
+build: ## Собрать приложение
+	@echo "Сборка RegLite..."
+	go build -ldflags "-X main.version=$(GIT_TAG) -X main.commit=$(GIT_COMMIT)" -o $(BINARY_NAME) cmd/reglite/main.go
+
+build-all: ## Собрать для всех платформ
+	@echo "Сборка для всех платформ..."
+	@mkdir -p $(DIST_DIR)
+	GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=$(GIT_TAG) -X main.commit=$(GIT_COMMIT)" -o $(DIST_DIR)/$(BINARY_NAME)-linux-amd64 cmd/reglite/main.go
+	GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=$(GIT_TAG) -X main.commit=$(GIT_COMMIT)" -o $(DIST_DIR)/$(BINARY_NAME)-linux-arm64 cmd/reglite/main.go
+	GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=$(GIT_TAG) -X main.commit=$(GIT_COMMIT)" -o $(DIST_DIR)/$(BINARY_NAME)-darwin-amd64 cmd/reglite/main.go
+	GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=$(GIT_TAG) -X main.commit=$(GIT_COMMIT)" -o $(DIST_DIR)/$(BINARY_NAME)-darwin-arm64 cmd/reglite/main.go
+	GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=$(GIT_TAG) -X main.commit=$(GIT_COMMIT)" -o $(DIST_DIR)/$(BINARY_NAME)-windows-amd64.exe cmd/reglite/main.go
+
+install: build ## Установить бинарник в GOPATH/bin
+	@echo "Установка $(BINARY_NAME)..."
+	go install cmd/reglite/main.go
+
+# === ТЕСТИРОВАНИЕ И КАЧЕСТВО КОДА ===
+
+test: ## Запустить тесты
+	@echo "Запуск тестов..."
 	go test -v ./...
 
-test-coverage: ## Run tests with coverage
-	@echo "Running tests with coverage..."
+test-coverage: ## Запустить тесты с покрытием
+	@echo "Запуск тестов с покрытием..."
 	go test -v -cover -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
+	@echo "Отчет о покрытии создан: coverage.html"
 
-benchmark: ## Run benchmark tests
-	@echo "Running benchmarks..."
+benchmark: ## Запустить бенчмарки
+	@echo "Запуск бенчмарков..."
 	go test -bench=. -benchmem ./...
 
-fmt: ## Format code
-	@echo "Formatting code..."
+fmt: ## Форматировать код
+	@echo "Форматирование кода..."
 	go fmt ./...
 	gofmt -s -w .
 
-lint: ## Run linter
-	@echo "Running linter..."
+lint: ## Запустить линтер
+	@echo "Запуск линтера..."
 	golangci-lint run
 
-vet: ## Run go vet
-	@echo "Running go vet..."
+vet: ## Запустить go vet
+	@echo "Запуск go vet..."
 	go vet ./...
 
-check: fmt vet lint test ## Run all checks
+check: fmt vet lint test ## Запустить все проверки
 
-deps: ## Download dependencies
-	@echo "Downloading dependencies..."
-	go mod download
+# === DOCKER ===
 
-tidy: ## Clean up dependencies
-	@echo "Tidying up dependencies..."
-	go mod tidy
+docker-build: ## Собрать Docker образ
+	@echo "Сборка Docker образа..."
+	docker build -t $(DOCKER_REPO):$(DOCKER_TAG) -t $(DOCKER_REPO):$(GIT_TAG) .
 
-update-deps: ## Update dependencies
-	@echo "Updating dependencies..."
-	go get -u ./...
-	go mod tidy
+docker-build-multiarch: ## Собрать мультиплатформенный Docker образ
+	@echo "Сборка мультиплатформенного Docker образа..."
+	docker buildx build --platform $(PLATFORMS) -t $(DOCKER_REPO):$(DOCKER_TAG) -t $(DOCKER_REPO):$(GIT_TAG) .
 
-docker-build: ## Build Docker image
-	@echo "Building Docker image..."
-	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+docker-push: docker-build ## Собрать и отправить Docker образ в DockerHub
+	@echo "Отправка Docker образа в DockerHub..."
+	docker push $(DOCKER_REPO):$(DOCKER_TAG)
+	docker push $(DOCKER_REPO):$(GIT_TAG)
 
-docker-run: ## Run Docker container
-	@echo "Running Docker container..."
+docker-push-multiarch: docker-build-multiarch ## Собрать и отправить мультиплатформенный образ
+	@echo "Отправка мультиплатформенного Docker образа..."
+	docker buildx build --platform $(PLATFORMS) --push -t $(DOCKER_REPO):$(DOCKER_TAG) -t $(DOCKER_REPO):$(GIT_TAG) .
+
+docker-run: ## Запустить Docker контейнер
+	@echo "Запуск Docker контейнера..."
 	docker run -d \
 		--name $(BINARY_NAME) \
 		-p $(PORT):8080 \
 		-v $(PWD)/$(CONFIG_FILE):/app/inventory.yaml \
 		-v $$HOME/.docker:/root/.docker:ro \
-		$(DOCKER_IMAGE):$(DOCKER_TAG)
+		$(DOCKER_REPO):$(DOCKER_TAG)
 
-docker-stop: ## Stop Docker container
-	@echo "Stopping Docker container..."
+docker-stop: ## Остановить Docker контейнер
+	@echo "Остановка Docker контейнера..."
 	docker stop $(BINARY_NAME) || true
 	docker rm $(BINARY_NAME) || true
 
-docker-logs: ## Show Docker container logs
+docker-logs: ## Показать логи Docker контейнера
 	docker logs -f $(BINARY_NAME)
 
-docker-shell: ## Open shell in Docker container
+docker-shell: ## Открыть shell в Docker контейнере
 	docker exec -it $(BINARY_NAME) sh
 
-clean: ## Clean build artifacts
-	@echo "Cleaning up..."
+# === ЗАВИСИМОСТИ ===
+
+deps: ## Скачать зависимости
+	@echo "Скачивание зависимостей..."
+	go mod download
+
+tidy: ## Очистить зависимости
+	@echo "Очистка зависимостей..."
+	go mod tidy
+
+update-deps: ## Обновить зависимости
+	@echo "Обновление зависимостей..."
+	go get -u ./...
+	go mod tidy
+
+# === РЕЛИЗ ===
+
+release: clean build-all ## Создать релизную сборку
+	@echo "Создание релиза..."
+	@mkdir -p $(DIST_DIR)
+	cp README.md $(DIST_DIR)/
+	cp inventory.example.yaml $(DIST_DIR)/inventory.example.yaml
+	cd $(DIST_DIR) && \
+	tar -czf $(BINARY_NAME)-linux-amd64.tar.gz $(BINARY_NAME)-linux-amd64 README.md inventory.example.yaml && \
+	tar -czf $(BINARY_NAME)-linux-arm64.tar.gz $(BINARY_NAME)-linux-arm64 README.md inventory.example.yaml && \
+	tar -czf $(BINARY_NAME)-darwin-amd64.tar.gz $(BINARY_NAME)-darwin-amd64 README.md inventory.example.yaml && \
+	tar -czf $(BINARY_NAME)-darwin-arm64.tar.gz $(BINARY_NAME)-darwin-arm64 README.md inventory.example.yaml && \
+	zip $(BINARY_NAME)-windows-amd64.zip $(BINARY_NAME)-windows-amd64.exe README.md inventory.example.yaml
+	@echo "Релиз создан в директории $(DIST_DIR)/"
+
+# === УТИЛИТЫ ===
+
+health: ## Проверить работает ли приложение
+	@curl -f http://localhost:$(PORT)/api/v1/health || echo "Приложение не запущено"
+
+generate: ## Генерировать код (если нужно)
+	@echo "Генерация кода..."
+	go generate ./...
+
+clean: ## Очистить артефакты сборки
+	@echo "Очистка..."
 	rm -f $(BINARY_NAME)
-	rm -rf dist/
+	rm -rf $(DIST_DIR)/
 	rm -f coverage.out coverage.html
 	rm -f *.prof
 
-clean-docker: ## Clean Docker images and containers
-	@echo "Cleaning Docker artifacts..."
+clean-docker: ## Очистить Docker образы и контейнеры
+	@echo "Очистка Docker артефактов..."
 	docker stop $(BINARY_NAME) || true
 	docker rm $(BINARY_NAME) || true
-	docker rmi $(DOCKER_IMAGE):$(DOCKER_TAG) || true
+	docker rmi $(DOCKER_REPO):$(DOCKER_TAG) || true
+	docker rmi $(DOCKER_REPO):$(GIT_TAG) || true
 
-release: clean build-all ## Create release builds
-	@echo "Creating release..."
-	mkdir -p dist
-	cp README.md dist/
-	cp inventory.example.yaml dist/inventory.example.yaml
-	tar -czf dist/$(BINARY_NAME)-linux-amd64.tar.gz -C dist $(BINARY_NAME)-linux-amd64 README.md inventory.example.yaml
-	tar -czf dist/$(BINARY_NAME)-linux-arm64.tar.gz -C dist $(BINARY_NAME)-linux-arm64 README.md inventory.example.yaml
-	tar -czf dist/$(BINARY_NAME)-darwin-amd64.tar.gz -C dist $(BINARY_NAME)-darwin-amd64 README.md inventory.example.yaml
-	tar -czf dist/$(BINARY_NAME)-darwin-arm64.tar.gz -C dist $(BINARY_NAME)-darwin-arm64 README.md inventory.example.yaml
-	zip -j dist/$(BINARY_NAME)-windows-amd64.zip dist/$(BINARY_NAME)-windows-amd64.exe dist/README.md dist/inventory.example.yaml
-
-install: build ## Install binary to GOPATH/bin
-	@echo "Installing $(BINARY_NAME)..."
-	go install cmd/reglite/main.go
-
-uninstall: ## Remove binary from GOPATH/bin
-	@echo "Uninstalling $(BINARY_NAME)..."
-	rm -f $(GOPATH)/bin/$(BINARY_NAME)
-
-watch: ## Watch for changes and restart (requires entr)
-	@echo "Watching for changes..."
-	find . -name "*.go" | entr -r make run
-
-serve-docs: ## Serve documentation locally
-	@echo "Starting documentation server..."
-	@if command -v python3 > /dev/null; then \
-		python3 -m http.server 8000; \
-	elif command -v python > /dev/null; then \
-		python -m SimpleHTTPServer 8000; \
-	else \
-		echo "Python not found. Install Python to serve docs."; \
-	fi
-
-config-example: ## Create example configuration
-	@echo "Creating example configuration..."
-	cp inventory.example.yaml inventory.yaml
-
-health: ## Check if the application is running
-	@curl -f http://localhost:$(PORT)/api/v1/health || echo "Application not running"
-
-generate: ## Generate code (if needed)
-	@echo "Generating code..."
-	go generate ./... 
+.DEFAULT_GOAL := help 

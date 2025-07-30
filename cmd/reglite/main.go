@@ -20,45 +20,36 @@ func main() {
 	)
 	flag.Parse()
 
-	// Загружаем конфигурацию
 	cfg, err := config.LoadConfig(*configFile)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Настраиваем Gin
 	if !*debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	router := gin.New()
-
-	// Используем middleware
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-
-	// Настраиваем статические файлы
 	router.Static("/static", "./web/static")
 	router.LoadHTMLGlob("web/templates/*")
-
-	// Создаем handlers
 	h := handlers.NewHandler(cfg)
 
-	// Web UI routes
 	router.GET("/", h.ServeIndex)
 
-	// API routes
 	api := router.Group("/api/v1")
 	{
 		api.GET("/health", h.GetHealthCheck)
 		api.GET("/registries", h.GetRegistries)
-		api.GET("/registries/:registry/repositories", h.GetRepositories)
-		api.GET("/registries/:registry/repositories/:repository/tags", h.GetTags)
-		api.GET("/registries/:registry/repositories/:repository/tags/:tag/manifest", h.GetManifest)
-		api.DELETE("/registries/:registry/repositories/:repository/manifests/:digest", h.DeleteTag)
+		api.GET("/registries/status", h.GetRegistriesWithStatus)
+		api.POST("/registries/validate", h.ValidateRegistries)
+		api.GET("/repositories", h.GetRepositories)
+		api.GET("/repository/info", h.GetRepositoryInfo)
+		api.GET("/tags", h.GetTags)
+		api.GET("/manifest", h.GetManifest)
+		api.DELETE("/manifest", h.DeleteTag)
 	}
-
-	// Настраиваем сервер с таймаутами
 	server := &http.Server{
 		Addr:           ":" + *port,
 		Handler:        router,

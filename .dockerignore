@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# Документация
+README.md
+CONTRIBUTING.md
+*.md
+
+# Конфигурация и примеры  
+inventory.yaml
+inventory.example.yaml
+
+# Артефакты сборки
+reglite
+dist/
+vendor/
+
+# IDE и редакторы
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS файлы
+.DS_Store
+Thumbs.db
+
+# Логи и временные файлы
+*.log
+*.tmp
+
+# Docker файлы
+Dockerfile
+.dockerignore
+
+# Makefile
+Makefile

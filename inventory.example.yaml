@@ -1,10 +1,16 @@
 inventory:
-  my-internal-registry:
-    url: http://192.168.0.50:5000
-  secure-registry:
-    url: https://registry.mycorp.internal
-    username: admin
-    password: secret
-  docker-hub:
+  # Локальный реестр без авторизации
+  local:
+    url: http://localhost:5000
+    
+  # Приватный реестр с логином/паролем  
+  company:
+    url: https://registry.company.com
+    username: myuser
+    password: mypass
+    
+  # Docker Hub (для приватных образов)
+  dockerhub:
     url: https://registry-1.docker.io
-    # Для публичных репозиториев можно не указывать username/password 
+    username: dockeruser
+    password: dockerpass

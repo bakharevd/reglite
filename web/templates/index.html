@@ -10,8 +10,11 @@
 <body>
     <div class="container">
         <header class="header">
+            <button class="theme-toggle" id="theme-toggle" aria-label="Переключить тему">
+                <i class="fas fa-moon" id="theme-icon"></i>
+            </button>
             <div class="header-content">
-                <h1><i class="fab fa-docker"></i> RegLite</h1>
+                <h1 id="header-title" style="cursor: pointer;"><i class="fab fa-docker"></i> RegLite</h1>
                 <p>Легковесный веб-интерфейс для Docker Registry</p>
             </div>
         </header>
@@ -20,6 +23,26 @@
             <div class="sidebar">
                 <div class="section">
                     <h3><i class="fas fa-server"></i> Реестры</h3>
+                    
+                    <!-- Кнопка валидации -->
+                    <button class="validate-button" id="validate-registries" title="Проверить доступность всех реестров">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Проверить реестры</span>
+                    </button>
+                    
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="registries-search" class="search-input" placeholder="Поиск реестров... (Ctrl+F или /)">
+                            <button class="search-clear" id="registries-clear" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="registries-header">
+                            <div id="registries-count" class="search-results-count"></div>
+                            <div class="registries-count" id="registries-status-count"></div>
+                        </div>
+                    </div>
                     <div id="registries-list" class="list-group">
                         <div class="loading">Загружаем...</div>
                     </div>
@@ -29,8 +52,26 @@
             <div class="content">
                 <div class="section" id="repositories-section" style="display: none;">
                     <div class="section-header">
-                        <h3><i class="fas fa-folder"></i> Репозитории</h3>
-                        <span id="current-registry" class="badge"></span>
+                        <div class="section-title">
+                            <h3><i class="fas fa-folder"></i> Репозитории</h3>
+                            <div class="section-subtitle">
+                                <span class="section-context">Реестр:</span>
+                                <span id="current-registry" class="badge badge-primary"></span>
+                            </div>
+                        </div>
+                        <button id="refresh-repositories" class="btn btn-secondary" title="Обновить список репозиториев">
+                            <i class="fas fa-sync-alt"></i> Обновить
+                        </button>
+                    </div>
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="repositories-search" class="search-input" placeholder="Поиск репозиториев... (Ctrl+F или /)">
+                            <button class="search-clear" id="repositories-clear" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div id="repositories-count" class="search-results-count"></div>
                     </div>
                     <div id="repositories-list" class="grid">
                         <div class="loading">Загружаем репозитории...</div>
@@ -39,22 +80,42 @@
 
                 <div class="section" id="tags-section" style="display: none;">
                     <div class="section-header">
-                        <h3><i class="fas fa-tags"></i> Теги</h3>
-                        <span id="current-repository" class="badge"></span>
-                        <button id="back-to-repos" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Назад
-                        </button>
+                        <div class="section-title">
+                            <h3><i class="fas fa-tags"></i> Теги</h3>
+                            <div class="section-subtitle">
+                                <span class="section-context">Репозиторий:</span>
+                                <span id="current-repository" class="badge badge-success"></span>
+                            </div>
+                        </div>
+                        <div class="section-actions">
+                            <button id="refresh-tags" class="btn btn-secondary" title="Обновить список тегов">
+                                <i class="fas fa-sync-alt"></i> Обновить
+                            </button>
+                            <button id="back-to-repos" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Назад
+                            </button>
+                        </div>
+                    </div>
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="tags-search" class="search-input" placeholder="Поиск тегов... (Ctrl+F или /)">
+                            <button class="search-clear" id="tags-clear" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div id="tags-count" class="search-results-count"></div>
                     </div>
                     <div id="tags-list" class="grid">
                         <div class="loading">Загружаем теги...</div>
                     </div>
                 </div>
 
-                <div class="welcome" id="welcome-section">
+                <div class="welcome" id="welcome-section" style="display: none;">
                     <div class="welcome-content">
                         <i class="fab fa-docker welcome-icon"></i>
                         <h2>Добро пожаловать в RegLite</h2>
-                        <p>Выберите реестр слева для начала работы</p>
+                        <p>Выберите реестр слева для начала работы с современным и легковесным интерфейсом</p>
                         <div class="features">
                             <div class="feature">
                                 <i class="fas fa-eye"></i>
@@ -65,7 +126,7 @@
                                 <span>Управление тегами</span>
                             </div>
                             <div class="feature">
-                                <i class="fas fa-trash"></i>
+                                <i class="fas fa-trash-alt"></i>
                                 <span>Удаление образов</span>
                             </div>
                             <div class="feature">
@@ -79,21 +140,44 @@
         </main>
     </div>
 
+    <!-- Modal для информации о репозитории -->
+    <div id="repository-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4><i class="fas fa-folder-open"></i> Информация о репозитории</h4>
+                <span class="close" aria-label="Закрыть">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="repository-info"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="view-repository-tags" class="btn btn-primary">
+                    <i class="fas fa-tags"></i> Просмотреть теги
+                </button>
+                <button id="close-repository-modal" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Закрыть
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal для информации о теге -->
     <div id="tag-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h4><i class="fas fa-info-circle"></i> Информация о теге</h4>
-                <span class="close">&times;</span>
+                <span class="close" aria-label="Закрыть">&times;</span>
             </div>
             <div class="modal-body">
                 <div id="tag-info"></div>
             </div>
             <div class="modal-footer">
                 <button id="delete-tag" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Удалить
+                    <i class="fas fa-trash-alt"></i> Удалить
                 </button>
-                <button id="close-modal" class="btn btn-secondary">Закрыть</button>
+                <button id="close-modal" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Закрыть
+                </button>
             </div>
         </div>
     </div>

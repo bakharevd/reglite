@@ -42,7 +42,10 @@ func LoadConfig(filename string) (*Config, error) {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	// Попробуем загрузить и объединить с Docker config.json
+	if config.Inventory == nil {
+		config.Inventory = make(map[string]Registry)
+	}
+
 	if dockerConfig, err := LoadDockerConfig(); err == nil {
 		mergeDockerConfig(&config, dockerConfig)
 	}
@@ -74,12 +77,9 @@ func LoadDockerConfig() (*DockerConfig, error) {
 // mergeDockerConfig объединяет Docker config с основной конфигурацией
 func mergeDockerConfig(config *Config, dockerConfig *DockerConfig) {
 	for registryURL, auth := range dockerConfig.Auths {
-		// Извлекаем хост из URL если есть схема
 		host := strings.TrimPrefix(strings.TrimPrefix(registryURL, "https://"), "http://")
 
-		// Проверяем, есть ли уже такой реестр в конфигурации
 		if _, exists := config.Inventory[host]; !exists {
-			// Определяем схему (по умолчанию http для локальных, https для остальных)
 			scheme := "http"
 			if !strings.Contains(host, "localhost") && !strings.Contains(host, "127.0.0.1") && !isPrivateIP(host) {
 				scheme = "https"
