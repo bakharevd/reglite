@@ -11,7 +11,7 @@ on:
 env:
   # Имя образа в GitHub Container Registry
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository_owner }}/reglite
 
 jobs:
   build:
@@ -21,6 +21,9 @@ jobs:
       packages: write
       # Это нужно для attestations
       id-token: write
+      # Дополнительные права для работы с репозиторием
+      actions: read
+      security-events: write
 
     steps:
     - name: Checkout repository
@@ -47,6 +50,16 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+
+    # Проверка прав доступа
+    - name: Test registry access
+      if: github.event_name != 'pull_request'
+      run: |
+        echo "Testing access to ghcr.io..."
+        docker pull alpine:latest
+        docker tag alpine:latest ghcr.io/${{ github.actor }}/test:latest || true
+        docker push ghcr.io/${{ github.actor }}/test:latest || echo "Push test failed, but continuing..."
+        docker rmi ghcr.io/${{ github.actor }}/test:latest || true
 
     # Extract metadata (tags, labels) for Docker
     # https://github.com/docker/metadata-action
