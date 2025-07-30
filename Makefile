@@ -12,10 +12,6 @@ DIST_DIR=dist
 DOCKERHUB_USER=sbakharevd
 DOCKER_REPO=$(DOCKERHUB_USER)/$(DOCKER_IMAGE)
 
-# GitHub Container Registry настройки
-GITHUB_USER=bakharevd
-GITHUB_REPO=ghcr.io/$(GITHUB_USER)/$(DOCKER_IMAGE)
-
 # Git информация
 GIT_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
 GIT_COMMIT := $(shell git rev-parse --short HEAD)
@@ -107,34 +103,6 @@ docker-push: docker-build ## Собрать и отправить Docker обр�
 docker-push-multiarch: docker-build-multiarch ## Собрать и отправить мультиплатформенный образ
 	@echo "Отправка мультиплатформенного Docker образа..."
 	docker buildx build --platform $(PLATFORMS) --push -t $(DOCKER_REPO):$(DOCKER_TAG) -t $(DOCKER_REPO):$(GIT_TAG) .
-
-# === GITHUB PACKAGES ===
-
-github-build: ## Собрать Docker образ для GitHub Packages
-	@echo "Сборка Docker образа для GitHub Packages..."
-	docker build -t $(GITHUB_REPO):$(DOCKER_TAG) -t $(GITHUB_REPO):$(GIT_TAG) .
-
-github-build-multiarch: ## Собрать мультиплатформенный Docker образ для GitHub Packages
-	@echo "Сборка мультиплатформенного Docker образа для GitHub Packages..."
-	docker buildx build --platform $(PLATFORMS) -t $(GITHUB_REPO):$(DOCKER_TAG) -t $(GITHUB_REPO):$(GIT_TAG) .
-
-github-push: github-build ## Собрать и отправить Docker образ в GitHub Packages
-	@echo "Отправка Docker образа в GitHub Packages..."
-	@echo "Убедитесь что вы авторизованы: docker login ghcr.io -u $(GITHUB_USER)"
-	docker push $(GITHUB_REPO):$(DOCKER_TAG)
-	docker push $(GITHUB_REPO):$(GIT_TAG)
-
-github-push-multiarch: github-build-multiarch ## Собрать и отправить мультиплатформенный образ в GitHub Packages
-	@echo "Отправка мультиплатформенного Docker образа в GitHub Packages..."
-	@echo "Убедитесь что вы авторизованы: docker login ghcr.io -u $(GITHUB_USER)"
-	docker buildx build --platform $(PLATFORMS) --push -t $(GITHUB_REPO):$(DOCKER_TAG) -t $(GITHUB_REPO):$(GIT_TAG) .
-
-github-login: ## Авторизация в GitHub Container Registry
-	@echo "Авторизация в GitHub Container Registry..."
-	@echo "Потребуется GitHub Personal Access Token с правами write:packages"
-	@docker login ghcr.io -u $(GITHUB_USER)
-
-publish-all: docker-push-multiarch github-push-multiarch ## Опубликовать в Docker Hub и GitHub Packages
 
 docker-run: ## Запустить Docker контейнер
 	@echo "Запуск Docker контейнера..."
