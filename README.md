@@ -38,6 +38,7 @@ RegLite предоставляет простой веб-интерфейс дл
 
 ### Вариант 2: Docker
 
+**Docker Hub:**
 ```bash
 docker run -d \
   --name reglite \
@@ -45,6 +46,16 @@ docker run -d \
   -v ~/.docker:/root/.docker:ro \
   -v $(pwd)/inventory.yaml:/app/inventory.yaml \
   sbakharevd/reglite:latest
+```
+
+**GitHub Packages:**
+```bash
+docker run -d \
+  --name reglite \
+  -p 8080:8080 \
+  -v ~/.docker:/root/.docker:ro \
+  -v $(pwd)/inventory.yaml:/app/inventory.yaml \
+  ghcr.io/bakharevd/reglite:latest
 ```
 
 После запуска откройте: http://localhost:8080
